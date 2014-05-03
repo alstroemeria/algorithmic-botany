@@ -111,6 +111,18 @@ function createCylinderFromEnds( material, radiusTop, radiusBottom, top, bottom,
   return cyl;
 }
 
+function nextHeading(heading,yaw,pitch,roll){
+  var yawM = new THREE.Matrix3(Math.cos(yaw),Math.sin(yaw),0,-Math.sin(yaw),Math.cos(yaw),0,0,0,1);
+  var pitchM = new THREE.Matrix3(Math.cos(pitch),0,-Math.sin(pitch),0,1,0,Math.sin(pitch),0,Math.cos(pitch));
+  var rollM = new THREE.Matrix3(1,0,0,0,Math.cos(roll),-Math.sin(roll),0,Math.sin(roll),Math.cos(roll));
+
+  var newSegment = heading.clone();
+  newSegment.applyMatrix3(yawM);
+  newSegment.applyMatrix3(pitchM);
+  newSegment.applyMatrix3(rollM);
+  return newSegment;
+}
+
 function createTree(x0, y0, z0){
   var axiom = getAxiom();
   var len = axiom.length;
@@ -123,14 +135,12 @@ function createTree(x0, y0, z0){
   var pitch = 0;
   var roll = 0;
 
-  var material = new THREE.LineBasicMaterial({color: 0x000000});
+  var material3D = new THREE.MeshLambertMaterial( { color: 0xAAAAAA , shading: THREE.FlatShading } );
   var geometry,line;
-
 
   var size = 2;
 
-  var stackX = []; var stackY = [];  var stackZ = []; var stackA = [];
-  var stackV = []; var stackAxis = [];
+  var stackV = [];
   var diam = 1;
 
   var polygon = false;
@@ -146,51 +156,33 @@ function createTree(x0, y0, z0){
       switch (character){
         case '+':
           yaw -= theta;
-          angleChange = true;
           break;
         case '-':
           yaw += theta;
-          angleChange = true;
           break;
         case '&':
           pitch -= theta;
-          angleChange = true;
           break;
         case '^':
           pitch += theta;
-          angleChange = true;
           break;
         case '\\':
           pitch -= theta;
-          angleChange = true;
           break;
         case '/':
           pitch += theta;
-          angleChange = true;
           break;
         case '{':
           polygon = true;
-          angleChange = true;
           break;
         case '}':
           polygon = false;
-          angleChange = true;
           break;
         case 'F':
-          var yawM = new THREE.Matrix3(Math.cos(yaw),Math.sin(yaw),0,-Math.sin(yaw),Math.cos(yaw),0,0,0,1);
-          var pitchM = new THREE.Matrix3(Math.cos(pitch),0,-Math.sin(pitch),0,1,0,Math.sin(pitch),0,Math.cos(pitch));
-          var rollM = new THREE.Matrix3(1,0,0,0,Math.cos(roll),-Math.sin(roll),0,Math.sin(roll),Math.cos(roll));
-
-          var newSegment = heading.clone();
-          newSegment.applyMatrix3(yawM);
-          newSegment.applyMatrix3(pitchM);
-          newSegment.applyMatrix3(rollM);
-
-          angleChange = false;
+          var newSegment;
+          newSegment = nextHeading(heading,yaw,pitch,roll);
 
           endpoint.addVectors(startpoint,newSegment)
-
-          var material3D = new THREE.MeshLambertMaterial( { color: 0xAAAAAA , shading: THREE.FlatShading } );
 
           var cylinder = new createCylinderFromEnds( material3D, 
             diam-0.01, diam,
@@ -199,7 +191,6 @@ function createTree(x0, y0, z0){
           scene.add( cylinder );
           diam-=0.01;
           startpoint = endpoint.clone();
-          scene.add(line);
 
           break;
         case 'L':
