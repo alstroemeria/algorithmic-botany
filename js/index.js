@@ -8,11 +8,29 @@ init();
 animate();
 
 function setRule(){
-  rule.axiom = "X"
-  rule.depth = 5
-  rule.angle = 20
-  rule.set = {'X': 'F[+X]F[-X]+X',
-              'F': 'FF'}
+  // rule.axiom = "X"
+  // rule.depth = 4
+  // rule.angle = 20
+  // rule.set = {'X': 'F[+X]F[-X]+X',
+  //             'F': 'F//F'}
+
+//   rule.axiom = "A"
+//   rule.depth = 2
+//   rule.angle = 90
+// rule.set = {'A':"B-F+CFC+F-D&F^D-F+&&CFC+F+B",
+// 'B':"A&F^CFB^F^D^^-F-D^|F^B|FC^F^A",
+// 'C':"|D^|F^B-F+C^F^A&&FA&F^C+F+B^F^D",
+// 'D':"|CFB-F+B|FA&F^A&&FB-F+B|FC"}
+rule.axiom = "t"
+rule.depth = 5
+rule.angle = 18
+rule.set = {'t':"i+[t+o]--//[--l]i[++l]-[to]++to",
+'i':"!Fs[//&&l][//^^l]Fs",
+'s':"sFs",
+'l':"[{+f-ff-f+|+f-ff-f}]",
+'o':"[&&&p~/w////w////w////w////w]",
+'p':"FF",
+'w':"[^F][~{&&&&-f+f|-f+f}]"}
 }
 
 function getAxiom() {
@@ -70,7 +88,7 @@ function makeLengthAngleAxisTransform( cyl, cylAxis, center )
 function createCylinderFromEnds( material, radiusTop, radiusBottom, top, bottom, segmentsWidth, openEnded)
 {
   // defaults
-  segmentsWidth = 6 ;
+  segmentsWidth = 32 ;
   openEnded = (openEnded === undefined) ? false : openEnded;
 
   // get cylinder height
@@ -100,29 +118,78 @@ function createTree(x0, y0, z0){
   var startpoint = new THREE.Vector3(x0,y0,z0), 
       endpoint = new THREE.Vector3() ;
   var character;
-  var angle = Math.PI / 2;
+
+  var yaw = 0;
+  var pitch = 0;
+  var roll = 0;
+
   var material = new THREE.LineBasicMaterial({color: 0x000000});
   var geometry,line;
 
 
-  var size = 1;
+  var size = 2;
 
   var stackX = []; var stackY = [];  var stackZ = []; var stackA = [];
   var stackV = []; var stackAxis = [];
   var diam = 1;
 
+  var polygon = false;
+
+  var heading = new THREE.Vector3(0,1,0); 
+  heading.multiplyScalar(size);
+
+  var angleChange = true;
+
   for (var i = 0; i < len; i++){
       character = axiom[i];
+
       switch (character){
-        case '-':
-          angle -= theta;
-          break;
         case '+':
-          angle += theta;
+          yaw -= theta;
+          angleChange = true;
+          break;
+        case '-':
+          yaw += theta;
+          angleChange = true;
+          break;
+        case '&':
+          pitch -= theta;
+          angleChange = true;
+          break;
+        case '^':
+          pitch += theta;
+          angleChange = true;
+          break;
+        case '\\':
+          pitch -= theta;
+          angleChange = true;
+          break;
+        case '/':
+          pitch += theta;
+          angleChange = true;
+          break;
+        case '{':
+          polygon = true;
+          angleChange = true;
+          break;
+        case '}':
+          polygon = false;
+          angleChange = true;
           break;
         case 'F':
-          var newSegment = new THREE.Vector3(size*Math.cos(angle),size*Math.sin(angle),0)
+          var yawM = new THREE.Matrix3(Math.cos(yaw),Math.sin(yaw),0,-Math.sin(yaw),Math.cos(yaw),0,0,0,1);
+          var pitchM = new THREE.Matrix3(Math.cos(pitch),0,-Math.sin(pitch),0,1,0,Math.sin(pitch),0,Math.cos(pitch));
+          var rollM = new THREE.Matrix3(1,0,0,0,Math.cos(roll),-Math.sin(roll),0,Math.sin(roll),Math.cos(roll));
+
+          var newSegment = heading.clone();
+          newSegment.applyMatrix3(yawM);
+          newSegment.applyMatrix3(pitchM);
+          newSegment.applyMatrix3(rollM);
+
+          angleChange = false;
+
           endpoint.addVectors(startpoint,newSegment)
+
           var material3D = new THREE.MeshLambertMaterial( { color: 0xAAAAAA , shading: THREE.FlatShading } );
 
           var cylinder = new createCylinderFromEnds( material3D, 
@@ -131,25 +198,22 @@ function createTree(x0, y0, z0){
             endpoint.clone());
           scene.add( cylinder );
           diam-=0.01;
-
-          geometry = new THREE.Geometry();
-          geometry.vertices.push(startpoint);
-          geometry.vertices.push(endpoint.clone());
           startpoint = endpoint.clone();
-          line = new THREE.Line(geometry, material);
-
           scene.add(line);
 
           break;
         case 'L':
           break;
         case '[':
-          stackV.push({"start":startpoint.clone(), "angle":angle, "diam":diam});            
+          stackV.push({"startpoint":startpoint.clone(), "heading":heading.clone(), "yaw":yaw, "pitch":pitch,"roll":roll, "diam":diam});            
           break;
         case ']':
           var data = stackV.pop();
-          startpoint = data.start;
-          angle = data.angle;
+          startpoint = data.startpoint;
+          heading = data.heading
+          yaw = data.yaw;
+          pitch = data.pitch;
+          roll = data.roll;
           diam = data.diam;
           break;
         default:
@@ -170,8 +234,9 @@ function init() {
   camera.position.z = 50;
   camera.position.x = 25;
 
-      controls = new THREE.OrbitControls(camera);
-
+  controls = new THREE.OrbitControls( camera );
+  controls.addEventListener( 'change', render );
+  controls.center.add(new THREE.Vector3(0,50,0));
 
 
 
