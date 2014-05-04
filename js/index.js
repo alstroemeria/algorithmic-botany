@@ -8,11 +8,11 @@ init();
 animate();
 
 function setRule(){
-  rule.axiom = "X"
-  rule.depth = 4
-  rule.angle = 20
-  rule.set = {'X': 'F[+X]F[-X]+X',
-              'F': 'F//F'}
+  // rule.axiom = "X"
+  // rule.depth = 4
+  // rule.angle = 20
+  // rule.set = {'X': 'F[+X]F[-X]+X',
+  //             'F': 'F//F'}
 
 //   rule.axiom = "A"
 //   rule.depth = 2
@@ -32,13 +32,13 @@ function setRule(){
 // 'p':"FF",
 // 'w':"[^F][~{&&&&-f+f|-f+f}]"}
 
-// rule.axiom = "A"
-// rule.depth = 5
-// rule.angle = 22.5
-// rule.set = {"A":"[&FLA]",
-// 'F':"S/////F",
-// 'S':"FL",
-// "L":"[~~~//{-f+f+f-|-f+f+f}]"}
+rule.axiom = "A"
+rule.depth = 6
+rule.angle = 22.5
+rule.set = {"A":"[&FL!!A]/////’[&FL!!A]///////~[&FL!!A]",
+'F':"S/////F",
+'S':"FL",
+"L":"[~~~^^{-f+f+f-|-f+f+f}]"}
 
 }
 
@@ -98,7 +98,7 @@ function makeLengthAngleAxisTransform( cyl, cylAxis, center )
 function createCylinderFromEnds( material, radiusTop, radiusBottom, top, bottom, segmentsWidth, openEnded)
 {
   // defaults
-  segmentsWidth = 32 ;
+  segmentsWidth = 6 ;
   openEnded = (openEnded === undefined) ? false : openEnded;
 
   // get cylinder height
@@ -133,15 +133,16 @@ function createTree(x0, y0, z0){
   var geometry,line;
 
   var stack = [];
-  var diam = 0.5;
-  var polygon = false;
 
-  var turtle = new Turtle(new THREE.Vector3(0,0,0), new THREE.Vector3(0,1,0),new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,-1),3);
+  var turtle = new Turtle(new THREE.Vector3(0,0,0), new THREE.Vector3(0,1,0),new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,-1),3,0.5);
 
   for (var i = 0; i < len; i++){
       character = axiom[i];
 
       switch (character){
+        case '!':
+          turtle.exercise(0.05);
+          break;
         case '+':
           turtle.yaw(theta);
           break;
@@ -180,7 +181,7 @@ function createTree(x0, y0, z0){
         case 'F':
           var tail= turtle.location.clone();
           turtle.move();
-          var cylinder = new createCylinderFromEnds( material3D, diam, diam, tail, turtle.location.clone());
+          var cylinder = new createCylinderFromEnds( material3D, turtle.weight,turtle.weight, tail, turtle.location.clone());
           scene.add(cylinder);
           break;
         case 'L':
@@ -198,15 +199,16 @@ function createTree(x0, y0, z0){
   return geometry;
 }
 
-function Turtle(loc, xaxis,yaxis,zaxis,step){
+function Turtle(loc, xaxis,yaxis,zaxis,step,weight){
   this.step = step;
   this.xaxis = xaxis;
   this.yaxis = yaxis;
   this.zaxis = zaxis;
+  this.weight = weight;
   this.location = loc;
 
   this.copy = function(){
-    return new Turtle(this.location.clone() ,this.xaxis.clone(), this.yaxis.clone() ,this.zaxis.clone(),this.step);
+    return new Turtle(this.location.clone() ,this.xaxis.clone(), this.yaxis.clone() ,this.zaxis.clone(),this.step,this.weight);
   }
 
   this.draw = function(axis){
@@ -260,6 +262,10 @@ function Turtle(loc, xaxis,yaxis,zaxis,step){
   this.yaw = function(theta){
     xaxis.applyAxisAngle(zaxis,theta);
     yaxis.applyAxisAngle(zaxis,theta);
+  }
+
+  this.exercise = function(intensity){
+    this.weight-=intensity;
   }
 
   this.clone = function(){
