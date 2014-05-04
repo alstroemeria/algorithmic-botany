@@ -8,11 +8,11 @@ init();
 animate();
 
 function setRule(){
-  // rule.axiom = "X"
-  // rule.depth = 4
-  // rule.angle = 20
-  // rule.set = {'X': 'F[+X]F[-X]+X',
-  //             'F': 'F//F'}
+  rule.axiom = "X"
+  rule.depth = 4
+  rule.angle = 20
+  rule.set = {'X': 'F[+X]F[-X]+X',
+              'F': 'F//F'}
 
 //   rule.axiom = "A"
 //   rule.depth = 2
@@ -21,16 +21,25 @@ function setRule(){
 // 'B':"A&F^CFB^F^D^^-F-D^|F^B|FC^F^A",
 // 'C':"|D^|F^B-F+C^F^A&&FA&F^C+F+B^F^D",
 // 'D':"|CFB-F+B|FA&F^A&&FB-F+B|FC"}
-rule.axiom = "t"
-rule.depth = 5
-rule.angle = 18
-rule.set = {'t':"i+[t+o]--//[--l]i[++l]-[to]++to",
-'i':"!Fs[//&&l][//^^l]Fs",
-'s':"sFs",
-'l':"[{+f-ff-f+|+f-ff-f}]",
-'o':"[&&&p~/w////w////w////w////w]",
-'p':"FF",
-'w':"[^F][~{&&&&-f+f|-f+f}]"}
+// rule.axiom = "t"
+// rule.depth = 5
+// rule.angle = 18
+// rule.set = {'t':"i+[t+o]--//[--l]i[++l]-[to]++to",
+// 'i':"!Fs[//&&l][//^^l]Fs",
+// 's':"sFs",
+// 'l':"[{+f-ff-f+|+f-ff-f}]",
+// 'o':"[&&&p~/w////w////w////w////w]",
+// 'p':"FF",
+// 'w':"[^F][~{&&&&-f+f|-f+f}]"}
+
+// rule.axiom = "A"
+// rule.depth = 5
+// rule.angle = 22.5
+// rule.set = {"A":"[&FLA]",
+// 'F':"S/////F",
+// 'S':"FL",
+// "L":"[~~~//{-f+f+f-|-f+f+f}]"}
+
 }
 
 function getAxiom() {
@@ -49,6 +58,7 @@ function getAxiom() {
     }
     axiom = builder;
   }
+  console.log(axiom);
   return axiom
 }
 
@@ -111,108 +121,150 @@ function createCylinderFromEnds( material, radiusTop, radiusBottom, top, bottom,
   return cyl;
 }
 
-function nextHeading(heading,yaw,pitch,roll){
-  var yawM = new THREE.Matrix3(Math.cos(yaw),Math.sin(yaw),0,-Math.sin(yaw),Math.cos(yaw),0,0,0,1);
-  var pitchM = new THREE.Matrix3(Math.cos(pitch),0,-Math.sin(pitch),0,1,0,Math.sin(pitch),0,Math.cos(pitch));
-  var rollM = new THREE.Matrix3(1,0,0,0,Math.cos(roll),-Math.sin(roll),0,Math.sin(roll),Math.cos(roll));
-
-  var newSegment = heading.clone();
-  newSegment.applyMatrix3(yawM);
-  newSegment.applyMatrix3(pitchM);
-  newSegment.applyMatrix3(rollM);
-  return newSegment;
-}
 
 function createTree(x0, y0, z0){
   var axiom = getAxiom();
   var len = axiom.length;
   var theta = rule.angle * Math.PI / 180;
-  var startpoint = new THREE.Vector3(x0,y0,z0), 
-      endpoint = new THREE.Vector3() ;
   var character;
 
-  var yaw = 0;
-  var pitch = 0;
-  var roll = 0;
-
+  var material = new THREE.LineBasicMaterial({color: 0xff0000});
   var material3D = new THREE.MeshLambertMaterial( { color: 0xAAAAAA , shading: THREE.FlatShading } );
   var geometry,line;
 
-  var size = 2;
-
-  var stackV = [];
-  var diam = 1;
-
+  var stack = [];
+  var diam = 0.5;
   var polygon = false;
 
-  var heading = new THREE.Vector3(0,1,0); 
-  heading.multiplyScalar(size);
-
-  var angleChange = true;
+  var turtle = new Turtle(new THREE.Vector3(0,0,0), new THREE.Vector3(0,1,0),new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,-1),3);
 
   for (var i = 0; i < len; i++){
       character = axiom[i];
 
       switch (character){
         case '+':
-          yaw -= theta;
+          turtle.yaw(theta);
           break;
         case '-':
-          yaw += theta;
-          break;
-        case '&':
-          pitch -= theta;
-          break;
-        case '^':
-          pitch += theta;
+          turtle.yaw(-theta);
           break;
         case '\\':
-          pitch -= theta;
+          turtle.roll(theta);
           break;
         case '/':
-          pitch += theta;
+          turtle.roll(-theta);
+          break;
+        case '&':
+          turtle.pitch(theta);
+          break;
+        case '^':
+          turtle.pitch(-theta);
+          break;
+        case '|':
+          turtle.yaw(Math.PI);
           break;
         case '{':
-          polygon = true;
+          stack.push(turtle.copy());            
+          geometry = new THREE.Geometry();
+          geometry.vertices.push( turtle.location.clone() );
           break;
         case '}':
-          polygon = false;
+          turtle = stack.pop();
+          var line = new THREE.Line(geometry, material);
+          scene.add(line);
+          break;
+        case 'f':
+          turtle.move();
+          geometry.vertices.push(turtle.location.clone());
           break;
         case 'F':
-          var newSegment;
-          newSegment = nextHeading(heading,yaw,pitch,roll);
-
-          endpoint.addVectors(startpoint,newSegment)
-
-          var cylinder = new createCylinderFromEnds( material3D, 
-            diam-0.01, diam,
-            startpoint.clone(),
-            endpoint.clone());
-          scene.add( cylinder );
-          diam-=0.01;
-          startpoint = endpoint.clone();
-
+          var tail= turtle.location.clone();
+          turtle.move();
+          var cylinder = new createCylinderFromEnds( material3D, diam, diam, tail, turtle.location.clone());
+          scene.add(cylinder);
           break;
         case 'L':
           break;
         case '[':
-          stackV.push({"startpoint":startpoint.clone(), "heading":heading.clone(), "yaw":yaw, "pitch":pitch,"roll":roll, "diam":diam});            
+          stack.push(turtle.copy());            
           break;
         case ']':
-          var data = stackV.pop();
-          startpoint = data.startpoint;
-          heading = data.heading
-          yaw = data.yaw;
-          pitch = data.pitch;
-          roll = data.roll;
-          diam = data.diam;
+          turtle = stack.pop();
           break;
         default:
           break;
       }
   }
-
   return geometry;
+}
+
+function Turtle(loc, xaxis,yaxis,zaxis,step){
+  this.step = step;
+  this.xaxis = xaxis;
+  this.yaxis = yaxis;
+  this.zaxis = zaxis;
+  this.location = loc;
+
+  this.copy = function(){
+    return new Turtle(this.location.clone() ,this.xaxis.clone(), this.yaxis.clone() ,this.zaxis.clone(),this.step);
+  }
+
+  this.draw = function(axis){
+    var geometry = new THREE.SphereGeometry( 5, 32, 32 );
+    var material = new THREE.MeshBasicMaterial( {color: 0xAAAAAA} );
+    var sphere = new THREE.Mesh( geometry, material );
+    sphere.position.x = this.location.x;
+    sphere.position.y = this.location.y;
+    sphere.position.z = this.location.z;
+    scene.add( sphere );
+
+    if (axis){
+      var dir = xaxis;
+      var origin = this.location;
+      var length = 50;
+      var hex = 0xff0000;
+      var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+      scene.add( arrowHelper );
+
+      var dir = yaxis;
+      var origin = this.location;
+      var length = 50;
+      var hex = 0x00ff00;
+      var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+      scene.add( arrowHelper );
+
+      var dir = zaxis;
+      var origin = this.location;
+      var length = 50;
+      var hex = 0x0000ff;
+      var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+    }
+    scene.add( arrowHelper );
+  }
+
+  this.move = function(){
+    var partial = xaxis.clone().multiplyScalar(this.step);
+    this.location.addVectors(this.location,partial);
+  }
+
+  this.roll = function(theta){
+    yaxis.applyAxisAngle(xaxis,theta);
+    zaxis.applyAxisAngle(xaxis,theta);
+  }
+
+  this.pitch = function(theta){
+    xaxis.applyAxisAngle(yaxis,theta);
+    zaxis.applyAxisAngle(yaxis,theta);
+  }
+
+  this.yaw = function(theta){
+    xaxis.applyAxisAngle(zaxis,theta);
+    yaxis.applyAxisAngle(zaxis,theta);
+  }
+
+  this.clone = function(){
+    return JSON.parse(JSON.stringify(this));
+  }
 }
 
 function init() {
@@ -227,13 +279,12 @@ function init() {
 
   controls = new THREE.OrbitControls( camera );
   controls.addEventListener( 'change', render );
-  controls.center.add(new THREE.Vector3(0,50,0));
-
+  controls.center.add(new THREE.Vector3(0,0,0));
 
 
   scene = new THREE.Scene();
 
-    var ambientLight = new THREE.AmbientLight( 0x222222 );
+  var ambientLight = new THREE.AmbientLight( 0x222222 );
 
   var light = new THREE.DirectionalLight( 0xffffff, 1.0 );
   light.position.set( 200, 400, 500 );
@@ -266,8 +317,6 @@ function init() {
   container.appendChild( stats.domElement );
 
   window.addEventListener( 'resize', onWindowResize, false );
-
-
 
   //Tree
   setRule();
