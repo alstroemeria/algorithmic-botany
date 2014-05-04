@@ -128,7 +128,7 @@ function createTree(x0, y0, z0){
   var theta = rule.angle * Math.PI / 180;
   var character;
 
-  var material = new THREE.LineBasicMaterial({color: 0xff0000});
+  var material = new THREE.MeshBasicMaterial({color:"#ff0000"});
   var material3D = new THREE.MeshLambertMaterial( { color: 0xAAAAAA , shading: THREE.FlatShading } );
   var geometry,line;
 
@@ -171,8 +171,15 @@ function createTree(x0, y0, z0){
           break;
         case '}':
           turtle = stack.pop();
-          var line = new THREE.Line(geometry, material);
-          scene.add(line);
+
+          for (x = 0; x < geometry.vertices.length-2; x++) {
+            geometry.faces.push(new THREE.Face3(0, x + 1, x + 2));
+          }
+          geometry.computeBoundingSphere();
+
+          mesh = new THREE.Mesh(geometry, material);
+          scene.add(mesh);
+
           break;
         case 'f':
           turtle.move();
