@@ -7,6 +7,109 @@ var rule = {};
 init();
 animate();
 
+
+function getRule(){
+
+  if (!String.format) {
+    String.format = function(format) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return format.replace(/{(\d+)}/g, function(match, number) { 
+        return typeof args[number] != 'undefined'
+          ? args[number] 
+          : match
+        ;
+      });
+    };
+  }
+
+  var a = {'n':10,
+          'define':{'r1':0.9, /* contraction ratio for the trunk */
+                    'r2':0.6, /* contraction ratio for branches */
+                    'a0':45, /* branching angle from the trunk */
+                    'a2':45, /* branching angle for lateral axes */
+                    'd':137.5, /* divergence angle */
+                    'wr':0.707}, /* width decrease rate */
+          'axiom':'A(1,10)',
+          'rule':{
+            'A':{'params':['l','w'],
+                  'condition':"*",
+                  'successor':"!(w)F(l)[&(a0)B(l*r2,w*wr)]/(d)A(l*r1,w*wr)"},
+            'B':{'params':['l','w'],
+                  'condition':"*",
+                  'successor':"!(w)F(l)[-(a2)$C(l*r2,w*wr)]C(l*r1,w*wr)"},
+            'C':{'params':['l','w'],
+                  'condition':"*",
+                  'successor':"!(w)F(l)[+(a2)$B(l*r2,w*wr)]B(l*r1,w*wr)"}
+          }};
+
+  function substitute (sequence){
+    var current = sequence;
+    for (var value in a.define){
+      current = current.replace(new RegExp(value, 'g'), a.define[value]);
+    }
+    return current;
+  }
+
+  function doMath (sequence){
+    var current = substitute(sequence);
+    var value = current;
+    //find rules
+    var reg = /\((.*?)\)/g;
+    var found;
+    while (found = reg.exec(current)) {
+      var params = found[1].split(",");
+      var evaluatedparam =[];
+      for (var i in params){
+        evaluatedparam.push(eval(params[i]));
+      }
+      var result = evaluatedparam.join(",")
+      value = value.replace(found[1], result);
+    }
+    return value;
+  }
+
+  function evaluate(sequence){
+    var current = sequence;
+    var value = current;
+    //find rules
+    var reg = /([^F!&^\/\\+-])\((.*?)\)/g;
+    var found;
+    while (found = reg.exec(current)) {
+      var rule = a.rule[found[1]];
+      var params = found[2].split(",");
+      //push to definitions
+      for (var i in rule.params){
+        a.define[rule.params[i]]=params[i];
+      }
+      var result = doMath(substitute(rule.successor));
+      //pop out of definitions
+      for (var i in rule.params){
+        delete a.define[rule.params[i]]
+      }
+      value = value.replace(found[0], result);
+    }
+    return value;
+  }
+
+  var axiom = doMath(substitute(a.axiom));
+  axiom = evaluate(axiom);
+  console.log(axiom);
+ 
+  // var axiom = a.axiom;
+  // console.log(axiom);
+  // axiom = evaluate(axiom);
+  // console.log(axiom);
+  // axiom = evaluate(axiom);
+  // console.log(axiom);
+
+
+
+
+}
+
+
+
+
 function setRule(){
   // rule.axiom = "X"
   // rule.depth = 4
@@ -333,8 +436,8 @@ function init() {
 
   //Tree
   setRule();
-
-  createTree(0, 0, 0);  
+  getRule();
+  //createTree(0, 0, 0);  
 
   render();
 }
