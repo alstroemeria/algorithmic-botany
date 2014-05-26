@@ -14,31 +14,31 @@ function setRule(){
   // rule.set = {'X': 'F[+X]F[-X]+X',
   //             'F': 'F//F'}
 
-//   rule.axiom = "A"
-//   rule.depth = 2
-//   rule.angle = 90
-// rule.set = {'A':"B-F+CFC+F-D&F^D-F+&&CFC+F+B",
-// 'B':"A&F^CFB^F^D^^-F-D^|F^B|FC^F^A",
-// 'C':"|D^|F^B-F+C^F^A&&FA&F^C+F+B^F^D",
-// 'D':"|CFB-F+B|FA&F^A&&FB-F+B|FC"}
-// rule.axiom = "t"
-// rule.depth = 5
-// rule.angle = 18
-// rule.set = {'t':"i+[t+o]--//[--l]i[++l]-[to]++to",
-// 'i':"!Fs[//&&l][//^^l]Fs",
-// 's':"sFs",
-// 'l':"[{+f-ff-f+|+f-ff-f}]",
-// 'o':"[&&&p~/w////w////w////w////w]",
-// 'p':"FF",
-// 'w':"[^F][~{&&&&-f+f|-f+f}]"}
+  //   rule.axiom = "A"
+  //   rule.depth = 2
+  //   rule.angle = 90
+  // rule.set = {'A':"B-F+CFC+F-D&F^D-F+&&CFC+F+B",
+  // 'B':"A&F^CFB^F^D^^-F-D^|F^B|FC^F^A",
+  // 'C':"|D^|F^B-F+C^F^A&&FA&F^C+F+B^F^D",
+  // 'D':"|CFB-F+B|FA&F^A&&FB-F+B|FC"}
+  // rule.axiom = "t"
+  // rule.depth = 5
+  // rule.angle = 18
+  // rule.set = {'t':"i+[t+o]--//[--l]i[++l]-[to]++to",
+  // 'i':"!Fs[//&&l][//^^l]Fs",
+  // 's':"sFs",
+  // 'l':"[{+f-ff-f+|+f-ff-f}]",
+  // 'o':"[&&&p~/w////w////w////w////w]",
+  // 'p':"FF",
+  // 'w':"[^F][~{&&&&-f+f|-f+f}]"}
 
-rule.axiom = "A"
-rule.depth = 6
-rule.angle = 22.5
-rule.set = {"A":"[&FL!!A]/////’[&FL!!A]///////~[&FL!!A]",
-'F':"S/////F",
-'S':"FL",
-"L":"[~~~^^{-f+f+f-|-f+f+f}]"}
+  rule.axiom = "A"
+  rule.depth = 6
+  rule.angle = 22.5
+  rule.set = {"A":"[&FL!!A]/////’[&FL!!A]///////~[&FL!!A]",
+  'F':"S/////F",
+  'S':"FL",
+  "L":"[~~~^^{-f+f+f-|-f+f+f}]"}
 
 }
 
@@ -285,16 +285,13 @@ function init() {
   container = document.createElement( 'div' );
   document.body.appendChild( container );
 
-  camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-  camera.position.y = 100;
-  camera.position.z = 50;
-  camera.position.x = 25;
+  camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
+  camera.position.y = 30;
+  camera.position.z = 70;
 
   controls = new THREE.OrbitControls( camera );
+  controls.target = new THREE.Vector3(0,30,0);
   controls.addEventListener( 'change', render );
-  controls.center.add(new THREE.Vector3(0,0,0));
-
-
   scene = new THREE.Scene();
 
   var ambientLight = new THREE.AmbientLight( 0x222222 );
@@ -333,9 +330,7 @@ function init() {
 
   //Tree
   setRule();
-
   createTree(0, 0, 0);  
-
   render();
 }
 
