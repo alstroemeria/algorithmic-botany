@@ -1,0 +1,10 @@
+{
+  "name": "Botany",
+  "version": "1.0.0",
+  "dependencies": {
+    "threejs": "r66",
+    "jquery": "latest",
+    "dat-gui": "latest",
+    "stats.js": "latest"
+  }
+}
